@@ -1,15 +1,15 @@
 .chatList::-webkit-scrollbar {
-    width: 5px; /* Very thin scrollbar */
-  }
+    width: 1px; 
+}
   
-  .chatList::-webkit-scrollbar-track {
+.chatList::-webkit-scrollbar-track {
     background: transparent;
-  }
+}
   
-  .chatList::-webkit-scrollbar-thumb {
-    background-color: #000; /* Black scrollbar */
+.chatList::-webkit-scrollbar-thumb {
+    background-color: #000;
     border-radius: 10px;
-  }
+}
 
 .chatList {
     overflow: scroll;
