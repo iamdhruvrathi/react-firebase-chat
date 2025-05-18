@@ -14,6 +14,8 @@ const ChatList = () => {
   const { chatId, changeChat } = useChatStore();
 
   useEffect(() => {
+    if (!currentUser?.id) return;
+
     const unSub = onSnapshot(
       doc(db, "userchats", currentUser.id),
       async (res) => {
@@ -32,7 +34,9 @@ const ChatList = () => {
 
           return { ...item, user };
         });
+
         const chatData = await Promise.all(promises);
+        // Sort by updatedAt descending
         setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
       }
     );
@@ -40,44 +44,28 @@ const ChatList = () => {
     return () => {
       unSub();
     };
-  }, [currentUser.id]);
+  }, [currentUser?.id]);
 
   const handleSelect = async (chat) => {
-    const userChats = chats.map((item) => {
-      const { user, ...rest } = item;
-      return rest;
-    });
-
-    const chatIndex = userChats.findIndex(
-      (item) => item.chatId === chat.chatId
-    );
-
-    userChats[chatIndex].isSeen = true;
-    changeChat(chat.chatId, chat.user);
-
-    const userChatsRef = doc(db, "userchats", currentUser.id);
-    const userChatsSnapshot = await getDoc(userChatsRef);
     try {
-      await updateDoc(userChatsRef, {
-        chats: userChats,
-      });
-      changeChat(chat.chatId, chat.user);
-    } catch (err) {
-      console.log(err);
-    }
-
-    if (userChatsSnapshot.exists()) {
-      const userChatsData = userChatsSnapshot.data();
-
-      const chatIndex = userChatsData.chats.findIndex(
-        (c) => c.chatId === chatId
+      // Update local chats array: mark selected chat as seen
+      const updatedChats = chats.map((item) =>
+        item.chatId === chat.chatId ? { ...item, isSeen: true } : item
       );
 
-      userChatsData.chats[chatIndex].isSeen = true;
-
+      // Update Firestore with chats array excluding user details
+      const userChatsRef = doc(db, "userchats", currentUser.id);
       await updateDoc(userChatsRef, {
-        chats: userChatsData.chats,
+        chats: updatedChats.map(({ user, ...rest }) => rest),
       });
+
+      // Update local state so UI updates immediately
+      setChats(updatedChats);
+
+      // Change current chat context
+      changeChat(chat.chatId, chat.user);
+    } catch (err) {
+      console.error("Error updating chat seen status:", err);
     }
   };
 
@@ -85,34 +73,37 @@ const ChatList = () => {
     <div className="chatList">
       <div className="search">
         <div className="searchBar">
-          <img src="./search.png" alt="" />
+          <img src="./search.png" alt="search icon" />
           <input type="text" placeholder="Search" />
         </div>
         <img
           src={addMode ? "./minus.png" : "./plus.png"}
-          alt=""
+          alt={addMode ? "Close add user" : "Add user"}
           className="add"
           onClick={() => setAddMode((prev) => !prev)}
+          style={{ cursor: "pointer" }}
         />
       </div>
+
       {chats.map((chat) => (
         <div
           className="item"
           key={chat.chatId}
           onClick={() => handleSelect(chat)}
           style={{
-            backgroundColor: chat?.isSeen ? "transparent" : "#5183fe",
+            backgroundColor: chat.isSeen ? "transparent" : "#5183fe",
+            cursor: "pointer",
           }}
         >
-          <img src="./avatar.png" alt="" />
+          <img src="./avatar.png" alt="avatar" />
           <div className="texts">
-            <span>{chat.user.username}</span>
-            <p>{chat.lastMessage}</p>
+            <span>{chat.user?.username}</span>
+            <p>{chat.lastMessage || "No messages yet"}</p>
           </div>
         </div>
       ))}
 
-      {addMode && <AddUser />}
+      {addMode && <AddUser setAddMode={setAddMode} />}
     </div>
   );
 };

@@ -11,7 +11,7 @@ import { useChatStore } from "./components/lib/chatStore";
 
 const App = () => {
   const { currentUser, isLoading, fetchUserInfo } = useUserStore();
-  const { chatId } = useChatStore();
+  const { chatId, resetChat } = useChatStore();
 
   useEffect(() => {
     const unSub = onAuthStateChanged(auth, (user) => {
@@ -19,13 +19,14 @@ const App = () => {
         fetchUserInfo(user?.uid);
       } else {
         fetchUserInfo(null);
+        resetChat();
       }
     });
 
     return () => {
       unSub();
     };
-  }, [fetchUserInfo]);
+  }, [fetchUserInfo, resetChat]);
 
   if (isLoading) return <div className="loading">Loading...</div>;
 
