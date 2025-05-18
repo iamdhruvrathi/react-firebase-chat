@@ -18,7 +18,8 @@ const Chat = () => {
   const [text, setText] = useState("");
 
   const { currentUser } = useUserStore();
-  const { chatId, user } = useChatStore();
+  const { chatId, user, isCurrentUserBlocked, isReceiverBlocked } =
+    useChatStore();
 
   const endRef = useRef(null);
 
@@ -52,7 +53,7 @@ const Chat = () => {
         messages: arrayUnion({
           senderId: currentUser.id,
           text,
-          createdAt: new Date(),
+          createdAt: serverTimestamp(),
         }),
       });
 
@@ -92,7 +93,7 @@ const Chat = () => {
         <div className="user">
           <img src="./avatar.png" alt="" />
           <div className="texts">
-            <span>{user.username}</span>
+            <span>{isCurrentUserBlocked ? "User" : user?.username}</span>
             <p>Lorem, ipsum dolor sit amet.</p>
           </div>
         </div>
@@ -104,22 +105,26 @@ const Chat = () => {
       </div>
 
       <div className="center">
-        {chat?.messages?.map((message) => (
-          <div
-            className={
-              message.senderId === currentUser?.id ? "message own" : "message"
-            }
-            key={message?.createdAt}
-          >
-            <div className="texts">
-              {/* <message.img 
+        {isCurrentUserBlocked ? (
+          <div className="blockmsg">You are Blocked</div>
+        ) : (
+          chat?.messages?.map((message) => (
+            <div
+              className={
+                message.senderId === currentUser?.id ? "message own" : "message"
+              }
+              key={message?.createdAt}
+            >
+              <div className="texts">
+                {/* <message.img 
                 src="https://cdn.prod.website-files.com/65de4c6f8dc17dc010f8ac55/67d3661a5901eb693e7456d5_66fc381ea437b00cbc162461_pexels-buro-millennial-636760-1438072.jpeg"
                 alt=""
               /> */}
-              <p>{message.text}</p>
+                <p>{message.text}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
         <div ref={endRef}></div>
       </div>
 
@@ -131,9 +136,14 @@ const Chat = () => {
         </div>
         <input
           type="text"
-          placeholder="Type a message..."
+          placeholder={
+            isReceiverBlocked || isCurrentUserBlocked
+              ? "You cannot text"
+              : "Type a message..."
+          }
           value={text}
           onChange={(e) => setText(e.target.value)}
+          disabled={isReceiverBlocked || isCurrentUserBlocked}
         />
         <div className="emoji">
           <img
@@ -147,7 +157,11 @@ const Chat = () => {
             </div>
           )}
         </div>
-        <button className="sendButton" onClick={handleSend}>
+        <button
+          className="sendButton"
+          onClick={handleSend}
+          disabled={isReceiverBlocked || isCurrentUserBlocked}
+        >
           Send
         </button>
       </div>

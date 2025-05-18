@@ -122,6 +122,12 @@
             }
             
         } 
+
+        .blockmsg {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
     }
 
     .bottom {
@@ -153,7 +159,12 @@
             padding: 10px;
             border-radius: 10px;
             font-size: 16px;
-            background-color: rgba(17, 25, 40, 0.5);
+            background-color: rgba(17, 25, 40, 0.6);
+
+            &:disabled{
+                background-color: rgba(17, 25, 40, 0.3);
+                cursor: not-allowed;
+            }
         }
 
         .emoji {
@@ -173,6 +184,16 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+
+            &:disabled{
+                background-color: #5182feb4;
+                cursor: not-allowed;
+            }
         }
     }
+}
+
+.no-chat {
+    align-items: center;
+    
 }
