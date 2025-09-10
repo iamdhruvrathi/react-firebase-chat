@@ -6,7 +6,7 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc } from "firebase/firestore";
 
 const Login = () => {
   const [avatar, setAvatar] = useState({
@@ -34,10 +34,30 @@ const Login = () => {
     try {
       const res = await createUserWithEmailAndPassword(auth, email, password);
 
+      let imageUrl = "";
+      if (avatar.file) {
+        const cloudData = new FormData();
+        cloudData.append("file", avatar.file);
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${
+            import.meta.env.CLOUDINARY_CLOUD_NAME
+          }/upload`,
+          {
+            method: "POST",
+            body: cloudData,
+          }
+        );
+
+        const uploadData = await uploadRes.json();
+        imageUrl = uploadData.secure_url;
+      }
+
       await setDoc(doc(db, "users", res.user.uid), {
         username,
         email,
         id: res.user.uid,
+        profilePic: imageUrl,
         blocked: [],
       });
 

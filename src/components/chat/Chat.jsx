@@ -6,6 +6,7 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./../lib/firebase";
@@ -53,7 +54,7 @@ const Chat = () => {
         messages: arrayUnion({
           senderId: currentUser.id,
           text,
-          createdAt: serverTimestamp(),
+          createdAt: new Date(),
         }),
       });
 
