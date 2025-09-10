@@ -105,7 +105,7 @@ const AddUser = ({ setAddMode }) => {
       {user && (
         <div className="user">
           <div className="detail">
-            <img src="./avatar.png" alt="" />
+            <img src={user.profilePic || "./avatar.png"} alt={user.username} />
             <span>{user.username}</span>
           </div>
           <button onClick={handleAdd}>Add User</button>

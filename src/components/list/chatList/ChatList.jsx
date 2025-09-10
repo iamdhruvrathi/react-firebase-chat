@@ -37,8 +37,13 @@ const ChatList = () => {
         });
 
         const chatData = await Promise.all(promises);
-        // Sort by updatedAt descending
-        setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+
+        // Remove duplicates by chatId
+        const uniqueChats = Array.from(
+          new Map(chatData.map((c) => [c.chatId, c])).values()
+        );
+
+        setChats(uniqueChats.sort((a, b) => b.updatedAt - a.updatedAt));
       }
     );
 
@@ -104,7 +109,10 @@ const ChatList = () => {
             cursor: "pointer",
           }}
         >
-          <img src="./avatar.png" alt="avatar" />
+          <img
+            src={chat.user.profilePic || "./avatar.png"}
+            alt={chat.user.username}
+          />
           <div className="texts">
             <span>
               {chat.user.blocked.includes(currentUser.id)
