@@ -6,17 +6,19 @@ import {
   doc,
   getDoc,
   onSnapshot,
-  serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./../lib/firebase";
 import { useChatStore } from "../lib/chatStore";
 import { useUserStore } from "../lib/userStore";
+import axios from "axios";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
   const [chat, setChat] = useState();
   const [text, setText] = useState("");
+  const [image, setImage] = useState(null); // file
+  const [preview, setPreview] = useState(""); // preview URL
 
   const { currentUser } = useUserStore();
   const { chatId, user, isCurrentUserBlocked, isReceiverBlocked } =
@@ -27,19 +29,27 @@ const Chat = () => {
   if (!chatId || !user)
     return <div className="no-chat">Start a conversation</div>;
 
+  // Scroll to bottom
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat]);
 
+  // Listen for messages
   useEffect(() => {
     const unSub = onSnapshot(doc(db, "chats", chatId), (res) => {
       setChat(res.data());
     });
-
-    return () => {
-      unSub();
-    };
+    return () => unSub();
   }, [chatId]);
+
+  // Handle image selection & preview
+  const handleImage = (e) => {
+    if (e.target.files[0]) {
+      const file = e.target.files[0];
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleEmoji = (e) => {
     setText((prev) => prev + e.emoji);
@@ -47,42 +57,65 @@ const Chat = () => {
   };
 
   const handleSend = async () => {
-    if (text === "") return;
+    if (!text && !image) return;
+
+    let imageUrl = null;
+
+    if (image) {
+      const formData = new FormData();
+      formData.append("file", image);
+      formData.append(
+        "upload_preset",
+        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_CHATS
+      );
+      formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
+
+      try {
+        const res = await axios.post(
+          `https://api.cloudinary.com/v1_1/${
+            import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+          }/image/upload`,
+          formData
+        );
+        imageUrl = res.data.secure_url;
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        return;
+      }
+    }
 
     try {
+      // Add message to chat
       await updateDoc(doc(db, "chats", chatId), {
         messages: arrayUnion({
           senderId: currentUser.id,
           text,
+          img: imageUrl || null,
           createdAt: new Date(),
         }),
       });
 
+      // Update last message in userchats
       const userIDs = [currentUser.id, user.id];
-
       userIDs.forEach(async (id) => {
         const userChatsRef = doc(db, "userchats", id);
         const userChatsSnapshot = await getDoc(userChatsRef);
-
         if (userChatsSnapshot.exists()) {
           const userChatsData = userChatsSnapshot.data();
-
           const chatIndex = userChatsData.chats.findIndex(
             (c) => c.chatId === chatId
           );
-
-          userChatsData.chats[chatIndex].lastMessage = text;
+          userChatsData.chats[chatIndex].lastMessage = text || "📷 Image";
           userChatsData.chats[chatIndex].isSeen =
             id === currentUser.id ? true : false;
           userChatsData.chats[chatIndex].updatedAt = Date.now();
-
-          await updateDoc(userChatsRef, {
-            chats: userChatsData.chats,
-          });
+          await updateDoc(userChatsRef, { chats: userChatsData.chats });
         }
       });
 
       setText("");
+      setImage(null);
+      setPreview("");
     } catch (err) {
       console.log(err);
     }
@@ -92,10 +125,10 @@ const Chat = () => {
     <div className="chat">
       <div className="top">
         <div className="user">
-          <img src="./avatar.png" alt="" />
+          <img src={user?.profilePic || "./avatar.png"} alt={user?.username} />
           <div className="texts">
             <span>{isCurrentUserBlocked ? "User" : user?.username}</span>
-            <p>Lorem, ipsum dolor sit amet.</p>
+            <p>Online</p>
           </div>
         </div>
         <div className="icons">
@@ -117,11 +150,14 @@ const Chat = () => {
               key={message?.createdAt}
             >
               <div className="texts">
-                {/* <message.img 
-                src="https://cdn.prod.website-files.com/65de4c6f8dc17dc010f8ac55/67d3661a5901eb693e7456d5_66fc381ea437b00cbc162461_pexels-buro-millennial-636760-1438072.jpeg"
-                alt=""
-              /> */}
-                <p>{message.text}</p>
+                {message.img && (
+                  <img
+                    src={message.img}
+                    alt="shared content"
+                    className="chatImg"
+                  />
+                )}
+                {message.text && <p>{message.text}</p>}
               </div>
             </div>
           ))
@@ -131,10 +167,47 @@ const Chat = () => {
 
       <div className="bottom">
         <div className="icons">
-          <img src="./img.png" alt="" />
-          <img src="./camera.png" alt="" />
+          <label htmlFor="imageUpload">
+            <img src="./img.png" alt="" />
+          </label>
+          <input
+            type="file"
+            id="imageUpload"
+            style={{ display: "none" }}
+            accept="image/*"
+            onChange={handleImage}
+          />
+
+          <label htmlFor="cameraUpload">
+            <img src="./camera.png" alt="Camera" />
+          </label>
+          <input
+            type="file"
+            id="cameraUpload"
+            style={{ display: "none" }}
+            accept="image/*"
+            capture="environment"
+            onChange={handleImage}
+          />
+
           <img src="./mic.png" alt="" />
         </div>
+
+        {/* Preview selected image */}
+        {preview && (
+          <div className="imagePreview">
+            <img src={preview} alt="preview" className="chatImg" />
+            <span
+              onClick={() => {
+                setImage(null);
+                setPreview("");
+              }}
+            >
+              ✖
+            </span>
+          </div>
+        )}
+
         <input
           type="text"
           placeholder={
@@ -146,6 +219,7 @@ const Chat = () => {
           onChange={(e) => setText(e.target.value)}
           disabled={isReceiverBlocked || isCurrentUserBlocked}
         />
+
         <div className="emoji">
           <img
             src="./emoji.png"
@@ -158,6 +232,7 @@ const Chat = () => {
             </div>
           )}
         </div>
+
         <button
           className="sendButton"
           onClick={handleSend}

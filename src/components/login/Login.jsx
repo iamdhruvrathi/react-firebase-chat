@@ -39,7 +39,7 @@ const Login = () => {
         cloudData.append("file", avatar.file);
         cloudData.append(
           "upload_preset",
-          import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET // ✅ Use VITE_ prefix
+          import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_PFPS // ✅ Use VITE_ prefix
         );
 
         console.log("Cloud Name:", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);

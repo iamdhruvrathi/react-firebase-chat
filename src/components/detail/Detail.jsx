@@ -27,9 +27,9 @@ const Detail = () => {
   return (
     <div className="detail">
       <div className="user">
-        <img src="./avatar.png" alt="" />
+        <img src={user.profilePic || "./avatar.png"} alt={user.username} />
         <h2>{isCurrentUserBlocked ? "User" : user?.username}</h2>
-        <p>Lorem ipsum dolor sit amet.</p>
+        <p>Online</p>
       </div>
       <div className="info">
         <div className="option">
