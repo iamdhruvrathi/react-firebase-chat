@@ -3,6 +3,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative; /* Added to position logout absolutely if needed */
 
     .user {
         display: flex;
@@ -19,12 +20,27 @@
 
     .icons {
         display: flex;
-        gap: 20px;
-    
+        align-items: center;
+        gap: 10px;
+        position: relative;
+
         img {
             width: 20px;
             height: 20px;
             cursor: pointer;
+        }
+
+        .logout {
+            padding: 10px;
+            background-color: #1a73e8;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            position: absolute;
+            top: 30px;
+            right: 0;
+            white-space: nowrap;
         }
     }
 }

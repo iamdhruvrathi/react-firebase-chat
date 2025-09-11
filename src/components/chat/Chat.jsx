@@ -131,11 +131,11 @@ const Chat = () => {
             <p>Online</p>
           </div>
         </div>
-        <div className="icons">
+        {/* <div className="icons">
           <img src="./phone.png" alt="" />
           <img src="./video.png" alt="" />
           <img src="./info.png" alt="" />
-        </div>
+        </div> */}
       </div>
 
       <div className="center">
@@ -178,7 +178,7 @@ const Chat = () => {
             onChange={handleImage}
           />
 
-          <label htmlFor="cameraUpload">
+          {/* <label htmlFor="cameraUpload">
             <img src="./camera.png" alt="Camera" />
           </label>
           <input
@@ -190,7 +190,7 @@ const Chat = () => {
             onChange={handleImage}
           />
 
-          <img src="./mic.png" alt="" />
+          <img src="./mic.png" alt="" /> */}
         </div>
 
         {/* Preview selected image */}
